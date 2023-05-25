@@ -33,7 +33,7 @@ def extract_by_default(*docs):
 
 
 def extract_with_KeyphraseCountVectorizer(*docs):
-    vectorizer = KeyphraseCountVectorizer()
+    vectorizer = KeyphraseCountVectorizer(pos_pattern="<N.*>{1, 2}")
 
     keyword_list = []
     for doc in docs:
