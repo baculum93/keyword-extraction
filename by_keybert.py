@@ -1,23 +1,28 @@
 import os.path as osp
+
 import pandas as pd
-from tqdm import tqdm
 from keybert import KeyBERT
 from keyphrase_vectorizers import KeyphraseCountVectorizer
+from tqdm import tqdm
+
+KW_MODEL = KeyBERT(model="all-MiniLM-L6-v2")
+USE_MAXSUM = False
+USE_MMR = True
 
 
 def extract_by_default(*docs):
-    kw_model = KeyBERT()
-
     keyword_list = []
     for doc in docs:
         temp_keyword_list = []
         for n in range(1, 4):
             try:
-                keyword = kw_model.extract_keywords(
-                        docs=doc, 
-                        keyphrase_ngram_range=(1, n),
-                        stop_words=None
-                    )
+                keyword = KW_MODEL.extract_keywords(
+                    docs=doc,
+                    stop_words=None,
+                    use_maxsum=USE_MAXSUM,
+                    use_mmr=USE_MMR,
+                    keyphrase_ngram_range=(1, n),
+                )
                 temp_keyword_list.append(keyword)
             except Exception as e:
                 temp_keyword_list.append([])
@@ -27,20 +32,19 @@ def extract_by_default(*docs):
     return keyword_list
 
 
-def extract_with_KeyphraseCountVectorizer(*docs, use_maxsum=False, use_mmr=False):
-    kw_model = KeyBERT()
+def extract_with_KeyphraseCountVectorizer(*docs):
     vectorizer = KeyphraseCountVectorizer()
 
     keyword_list = []
     for doc in docs:
         try:
-            keyword = kw_model.extract_keywords(
-                    docs=doc, 
-                    stop_words=None,
-                    vectorizer=vectorizer, 
-                    use_maxsum=use_maxsum,
-                    use_mmr=use_mmr
-                )
+            keyword = KW_MODEL.extract_keywords(
+                docs=doc,
+                stop_words=None,
+                use_maxsum=USE_MAXSUM,
+                use_mmr=USE_MMR,
+                vectorizer=vectorizer,
+            )
             keyword_list.append(keyword)
         except Exception as e:
             keyword_list.append([])
@@ -49,7 +53,7 @@ def extract_with_KeyphraseCountVectorizer(*docs, use_maxsum=False, use_mmr=False
     return keyword_list
 
 
-def run_keybert(dir_path, file_name):    
+def run_keybert(dir_path, file_name):
     # Load data
     df = pd.read_csv(osp.join(dir_path, f"{file_name}.csv"))
 
@@ -84,11 +88,13 @@ def run_keybert(dir_path, file_name):
         df.at[idx, "kwrd_all_dflt_3"] = keyword_dflt[2][2]
 
         # KeyphraseCountVectorizer
-        keyword_kcv = extract_with_KeyphraseCountVectorizer(title, abstract, f"{title}. {abstract}")
+        keyword_kcv = extract_with_KeyphraseCountVectorizer(
+            title, abstract, f"{title}. {abstract}"
+        )
         df.at[idx, "kwrd_ttl_kcv"] = keyword_kcv[0]
         df.at[idx, "kwrd_abs_kcv"] = keyword_kcv[1]
         df.at[idx, "kwrd_all_kcv"] = keyword_kcv[2]
-        
+
     # Save dataframe
     save_path = osp.join(dir_path, f"{file_name}_by_keybert.csv")
     df.to_csv(save_path, index=False, encoding="utf-8-sig")
