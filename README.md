@@ -17,5 +17,5 @@ conda env create -f requirements_conda.yaml
 ## Usage
 
 ```
-python run.py --dir_path _dataset --load_fn sample_data --method keybert
+python run.py --dir_path _dataset --load_fn sample_data --method keybert_default
 ```
