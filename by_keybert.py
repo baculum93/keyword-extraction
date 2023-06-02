@@ -1,3 +1,8 @@
+"""KeyBERT
+
+https://maartengr.github.io/KeyBERT/index.html
+"""
+
 import os.path as osp
 
 import pandas as pd
@@ -7,10 +12,22 @@ from transformers.pipelines import pipeline
 from tqdm import tqdm
 
 
-HF_MODEL = pipeline("feature-extraction", model="distilbert-base-cased")
-KW_MODEL = KeyBERT(model=HF_MODEL)
-USE_MAXSUM = False
-USE_MMR = True
+def set_model_config(hf_model_name=None):
+    config = {}
+    if not hf_model_name:
+        config["model_name"] = "all-MiniLM-L6-v2"
+        config["hf_model"] = None
+        config["kw_model"] = KeyBERT(model=config["model_name"])
+    else:
+        config["model_name"] = hf_model_name  # --> https://huggingface.co/models
+        config["hf_model"] = pipeline(model=config["model_name"], 
+                                      task="feature-extraction")
+        config["kw_model"] = KeyBERT(model=config["hf_model"])
+    config["use_maxsum"] = True
+    config["use_mmr"] = False
+    config["top_n"] = 10
+    config["stop_words"] = None
+    return config
 
 
 def extract_by_default(dir_path, file_name):
@@ -23,21 +40,25 @@ def extract_by_default(dir_path, file_name):
         for y in range(3):
             df[f"kwrd_{x}_{y+1}"] = None
 
+    # Set model config
+    config = set_model_config()
+
     # Extract keywords
     for row in tqdm(df.itertuples(), total=df.shape[0]):
         idx = row.Index
-        title = row.preprocessed_title
-        abstract = row.preprocessed_abstract
+        title = row.title
+        abstract = row.abstract
 
         docs = [title, abstract, f"{title}. {abstract}"]
         for i, doc in enumerate(docs):
             for n in range(1, 4):
                 try:
-                    keyword = KW_MODEL.extract_keywords(
+                    keyword = config["kw_model"].extract_keywords(
                         docs=doc,
-                        stop_words=None,
-                        use_maxsum=USE_MAXSUM,
-                        use_mmr=USE_MMR,
+                        stop_words=config["stop_words"],
+                        top_n=config["top_n"],
+                        use_maxsum=config["use_maxsum"],
+                        use_mmr=config["use_mmr"],
                         keyphrase_ngram_range=(1, n),
                     )
                     df.at[idx, f"kwrd_{text_type[i]}_{n}"] = keyword
@@ -45,10 +66,19 @@ def extract_by_default(dir_path, file_name):
                     df.at[idx, f"kwrd_{text_type[i]}_{n}"] = []
                     print(e)
                     print(doc)
+
+        if idx == 3:
+            break
     
+    # Config Dataframe
+    config_df = pd.DataFrame(data=config, index=[0])
+    config_df = config_df.T
+
     # Save dataframe
-    save_path = osp.join(dir_path, f"{file_name}_by_keybert_default.csv")
-    df.to_csv(save_path, index=False, encoding="utf-8-sig")
+    save_path = osp.join(dir_path, f"{file_name}_by_keybert_default.xlsx")
+    with pd.ExcelWriter(save_path) as writer:
+        df.to_excel(writer, index=False, sheet_name="keyword")
+        config_df.to_excel(writer, sheet_name="config")
 
 
 def extract_with_KeyphraseCountVectorizer(dir_path, file_name):
@@ -60,22 +90,25 @@ def extract_with_KeyphraseCountVectorizer(dir_path, file_name):
     for x in text_type.values():
         df[f"kwrd_{x}"] = None
 
+    # Set model config
+    config = set_model_config()
     vectorizer = KeyphraseCountVectorizer(pos_pattern="<N.*>{1, 3}")
 
     # Extract keywords
     for row in tqdm(df.itertuples(), total=df.shape[0]):
         idx = row.Index
-        title = row.preprocessed_title
-        abstract = row.preprocessed_abstract
+        title = row.title
+        abstract = row.abstract
     
         docs = [title, abstract, f"{title}. {abstract}"]
         for i, doc in enumerate(docs):
             try:
-                keyword = KW_MODEL.extract_keywords(
+                keyword = config["kw_model"].extract_keywords(
                     docs=doc,
-                    stop_words=None,
-                    use_maxsum=USE_MAXSUM,
-                    use_mmr=USE_MMR,
+                    stop_words=config["stop_words"],
+                    top_n=config["top_n"],
+                    use_maxsum=config["use_maxsum"],
+                    use_mmr=config["use_mmr"],
                     vectorizer=vectorizer,
                 )
                 df.at[idx, f"kwrd_{text_type[i]}"] = keyword
@@ -83,7 +116,16 @@ def extract_with_KeyphraseCountVectorizer(dir_path, file_name):
                 df.at[idx, f"kwrd_{text_type[i]}"] = []
                 print(e)
                 print(doc)
+    
+        if idx == 3:
+            break
+    
+    # Config Dataframe
+    config_df = pd.DataFrame(data=config, index=[0])
+    config_df = config_df.T
 
     # Save dataframe
-    save_path = osp.join(dir_path, f"{file_name}_by_keybert_KeyphraseCountVectorizer.csv")
-    df.to_csv(save_path, index=False, encoding="utf-8-sig")
+    save_path = osp.join(dir_path, f"{file_name}_by_keybert_KeyphraseCountVectorizer.xlsx")
+    with pd.ExcelWriter(save_path) as writer:
+        df.to_excel(writer, index=False, sheet_name="keyword")
+        config_df.to_excel(writer, sheet_name="config")
