@@ -8,8 +8,8 @@ import os.path as osp
 import pandas as pd
 from keybert import KeyBERT
 from keyphrase_vectorizers import KeyphraseCountVectorizer
-from transformers.pipelines import pipeline
 from tqdm import tqdm
+from transformers.pipelines import pipeline
 
 
 def set_model_config(hf_model_name=None):
@@ -20,8 +20,9 @@ def set_model_config(hf_model_name=None):
         config["kw_model"] = KeyBERT(model=config["model_name"])
     else:
         config["model_name"] = hf_model_name  # --> https://huggingface.co/models
-        config["hf_model"] = pipeline(model=config["model_name"], 
-                                      task="feature-extraction")
+        config["hf_model"] = pipeline(
+            model=config["model_name"], task="feature-extraction"
+        )
         config["kw_model"] = KeyBERT(model=config["hf_model"])
     config["use_maxsum"] = True
     config["use_mmr"] = False
@@ -31,6 +32,8 @@ def set_model_config(hf_model_name=None):
 
 
 def extract_by_default(dir_path, file_name):
+    file_name = f"{file_name}_preprocessed"
+
     # Load data
     df = pd.read_csv(osp.join(dir_path, f"{file_name}.csv"))
 
@@ -67,9 +70,6 @@ def extract_by_default(dir_path, file_name):
                     print(e)
                     print(doc)
 
-        if idx == 3:
-            break
-    
     # Config Dataframe
     config_df = pd.DataFrame(data=config, index=[0])
     config_df = config_df.T
@@ -82,6 +82,8 @@ def extract_by_default(dir_path, file_name):
 
 
 def extract_with_KeyphraseCountVectorizer(dir_path, file_name):
+    file_name = f"{file_name}_preprocessed"
+
     # Load data
     df = pd.read_csv(osp.join(dir_path, f"{file_name}.csv"))
 
@@ -99,7 +101,7 @@ def extract_with_KeyphraseCountVectorizer(dir_path, file_name):
         idx = row.Index
         title = row.title
         abstract = row.abstract
-    
+
         docs = [title, abstract, f"{title}. {abstract}"]
         for i, doc in enumerate(docs):
             try:
@@ -116,16 +118,15 @@ def extract_with_KeyphraseCountVectorizer(dir_path, file_name):
                 df.at[idx, f"kwrd_{text_type[i]}"] = []
                 print(e)
                 print(doc)
-    
-        if idx == 3:
-            break
-    
+
     # Config Dataframe
     config_df = pd.DataFrame(data=config, index=[0])
     config_df = config_df.T
 
     # Save dataframe
-    save_path = osp.join(dir_path, f"{file_name}_by_keybert_KeyphraseCountVectorizer.xlsx")
+    save_path = osp.join(
+        dir_path, f"{file_name}_by_keybert_KeyphraseCountVectorizer.xlsx"
+    )
     with pd.ExcelWriter(save_path) as writer:
         df.to_excel(writer, index=False, sheet_name="keyword")
         config_df.to_excel(writer, sheet_name="config")

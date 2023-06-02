@@ -1,6 +1,7 @@
 import argparse
 
 import by_keybert
+from preprocessing import run_preprocessing
 
 
 def main():
@@ -10,6 +11,10 @@ def main():
     parser.add_argument("--method", nargs="+", required=True)
     args = parser.parse_args()
 
+    # raw text preprocssing
+    run_preprocessing(args.dir_path, args.load_fn)
+
+    # keyword extraction
     if "keybert_default" in args.method:
         by_keybert.extract_by_default(args.dir_path, args.load_fn)
 
