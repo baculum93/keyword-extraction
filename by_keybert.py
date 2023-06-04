@@ -75,8 +75,9 @@ def extract_by_default(dir_path, file_name):
     config_df = config_df.T
 
     # Save dataframe
-    save_path = osp.join(dir_path, f"{file_name}_by_keybert_default.xlsx")
-    with pd.ExcelWriter(save_path) as writer:
+    save_file_name = f"{file_name}_by_keybert_default_model-{config['model_name']}_maxsum-{config['use_maxsum']}_mmr-{config['use_mmr']}.xlsx"
+    save_file_path = osp.join(dir_path, save_file_name)
+    with pd.ExcelWriter(save_file_path) as writer:
         df.to_excel(writer, index=False, sheet_name="keyword")
         config_df.to_excel(writer, sheet_name="config")
 
@@ -124,9 +125,8 @@ def extract_with_KeyphraseCountVectorizer(dir_path, file_name):
     config_df = config_df.T
 
     # Save dataframe
-    save_path = osp.join(
-        dir_path, f"{file_name}_by_keybert_KeyphraseCountVectorizer.xlsx"
-    )
-    with pd.ExcelWriter(save_path) as writer:
+    save_file_name = f"{file_name}_by_keybert_KeyphraseCountVectorizer_model-{config['model_name']}_maxsum-{config['use_maxsum']}_mmr-{config['use_mmr']}.xlsx"
+    save_file_path = osp.join(dir_path, save_file_name)
+    with pd.ExcelWriter(save_file_path) as writer:
         df.to_excel(writer, index=False, sheet_name="keyword")
         config_df.to_excel(writer, sheet_name="config")
