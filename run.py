@@ -1,6 +1,7 @@
 import argparse
 
 import by_keybert
+import by_tfidf
 from preprocessing import run_preprocessing
 
 
@@ -20,6 +21,9 @@ def main():
 
     if "keybert_nogram" in args.method:
         by_keybert.extract_with_KeyphraseCountVectorizer(args.dir_path, args.load_fn)
+
+    if "tfidf" in args.method:
+        by_tfidf.extract(args.dir_path, args.load_fn)
 
 
 if __name__ == "__main__":
