@@ -13,7 +13,7 @@ nltk.download("wordnet")
 
 def preprocess_text(text):
     if not isinstance(text, str):
-        return ""
+        return " "
 
     # 화학 기호와 숫자 사이의 공백 제거
     chem_regex = r"[A-Z]+[a-z]*\s+\d+"
@@ -54,6 +54,9 @@ def run_preprocessing(dir_path, file_name):
         df.at[row.Index, "ppd_title"] = preprocess_text(row.title)
         df.at[row.Index, "ppd_abstract"] = preprocess_text(row.abstract)
 
+    # 빈 값 처리
+    df = df.fillna(" ")
+
     # Save dataframe
     save_path = osp.join(dir_path, f"{file_name}_preprocessed.csv")
-    df.to_csv(save_path, index=False)
+    df.to_csv(save_path, index=False, encoding="utf-8-sig")
