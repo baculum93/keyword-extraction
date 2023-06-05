@@ -24,9 +24,11 @@ def set_model_config(hf_model_name=None):
             model=config["model_name"], task="feature-extraction"
         )
         config["kw_model"] = KeyBERT(model=config["hf_model"])
-    config["use_maxsum"] = True
-    config["use_mmr"] = False
     config["top_n"] = 10
+    config["use_maxsum"] = False  # diversification parameter
+    # config["nr_candidates"]
+    config["use_mmr"] = False  # diversification parameter
+    # config["diversity"]
     config["stop_words"] = None
     return config
 
