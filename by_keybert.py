@@ -51,8 +51,8 @@ def extract_by_default(dir_path, file_name):
     # Extract keywords
     for row in tqdm(df.itertuples(), total=df.shape[0]):
         idx = row.Index
-        title = row.title
-        abstract = row.abstract
+        title = row.ppd_title
+        abstract = row.ppd_abstract
 
         docs = [title, abstract, f"{title}. {abstract}"]
         for i, doc in enumerate(docs):
@@ -102,8 +102,8 @@ def extract_with_KeyphraseCountVectorizer(dir_path, file_name):
     # Extract keywords
     for row in tqdm(df.itertuples(), total=df.shape[0]):
         idx = row.Index
-        title = row.title
-        abstract = row.abstract
+        title = row.ppd_title
+        abstract = row.ppd_abstract
 
         docs = [title, abstract, f"{title}. {abstract}"]
         for i, doc in enumerate(docs):
