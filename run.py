@@ -1,7 +1,9 @@
 import argparse
 
 import by_keybert
+import by_rake
 import by_tfidf
+import by_yake
 from preprocessing import run_preprocessing
 
 
@@ -25,6 +27,11 @@ def main():
     if "tfidf" in args.method:
         by_tfidf.extract(args.dir_path, args.load_fn)
 
+    if "rake" in args.method:
+        by_rake.extract(args.dir_path, args.load_fn)
+
+    if "yake" in args.method:
+        by_yake.extract(args.dir_path, args.load_fn)
 
 if __name__ == "__main__":
     main()
