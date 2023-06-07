@@ -11,7 +11,7 @@ pip install -r requirements.txt
 or
 
 ```
-conda env create -f requirements_conda.yaml
+conda env create -f environment.yaml
 ```
 
 ## Usage
