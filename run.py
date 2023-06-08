@@ -2,6 +2,7 @@ import argparse
 
 import by_keybert
 import by_rake
+import by_textrank
 import by_tfidf
 from preprocessing import run_preprocessing
 
@@ -28,6 +29,9 @@ def main():
 
     if "rake" in args.method:
         by_rake.extract(args.dir_path, args.load_fn)
+
+    if "textrank" in args.method:
+        by_textrank.extract(args.dir_path, args.load_fn)
 
 
 if __name__ == "__main__":
