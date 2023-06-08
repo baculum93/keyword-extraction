@@ -50,14 +50,7 @@ def extract_by_default(dir_path, file_name):
     logger = utils.set_logger("keybert_default")
 
     # Load data
-    df = utils.preprocess_dataframe(dir_path, file_name)
-
-    # Create new columns
-    kwrd_columns = [col for col in df.columns if col.startswith("kwrd")]
-    df = df.drop(columns=kwrd_columns)
-    for col_prefix in kwrd_columns:
-        for ngram in range(1, 4):
-            df[f"{col_prefix}_{ngram}"] = None
+    df = utils.preprocess_dataframe_ngram(dir_path, file_name)
 
     # Set model config
     config = set_model_config()

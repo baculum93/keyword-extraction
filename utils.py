@@ -41,5 +41,20 @@ def preprocess_dataframe(dir_path, file_name):
     return df
 
 
+def preprocess_dataframe_ngram(dir_path, file_name):
+    file_name = f"{file_name}_preprocessed"
+
+    # Load data
+    df = pd.read_csv(osp.join(dir_path, f"{file_name}.csv"))
+
+    # Create new columns
+    col_names = ["ttl", "abs", "all"]
+    for col_name in col_names:
+        for ngram in range(1, 4):
+            df[f"kwrd_{col_name}_{ngram}"] = None
+
+    return df
+
+
 def dedupe_keyword(kewords, threshold=85):
     return list(process.dedupe(kewords, threshold=threshold))

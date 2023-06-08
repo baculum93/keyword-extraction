@@ -1,5 +1,6 @@
 scipy==1.8.0
 black==23.3.0
+en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.5.0/en_core_web_sm-3.5.0-py3-none-any.whl
 isort==5.12.0
 keybert==0.7.0
 keyphrase-vectorizers==0.0.11
