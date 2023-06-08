@@ -2,6 +2,7 @@ import argparse
 
 import by_keybert
 import by_rake
+import by_textrank
 import by_tfidf
 import by_yake
 from preprocessing import run_preprocessing
@@ -32,6 +33,10 @@ def main():
 
     if "yake" in args.method:
         by_yake.extract(args.dir_path, args.load_fn)
+        
+    if "textrank" in args.method:
+        by_textrank.extract(args.dir_path, args.load_fn)
+
 
 if __name__ == "__main__":
     main()
