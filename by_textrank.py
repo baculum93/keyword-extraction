@@ -5,24 +5,23 @@ import pytextrank
 import spacy
 from tqdm import tqdm
 
-import util
+import utils
 
 
 def get_keyword(doc):
     nlp = spacy.load("en_core_web_sm")
     nlp.add_pipe("textrank")
     nlp_doc = nlp(doc)
-    keyword = [k.text for k in nlp_doc._.phrases if len(k.text.split()) <= 3]
-    keyword = util.dedupe_keyword(keyword)
+    keyword = [(k.text, k.rank) for k in nlp_doc._.phrases if len(k.text.split()) <= 3]
     return keyword
 
 
 def extract(dir_path, file_name):
     # Load data
-    df = util.preprocess_dataframe(dir_path, file_name)
+    df = utils.preprocess_dataframe(dir_path, file_name)
 
     # Extract keywords
-    for row in tqdm(df.itertuples(), total=df.shape[0]):
+    for row in tqdm(df.itertuples(), total=df.shape[0], desc="[TextRank]"):
         idx = row.Index
         title = row.ppd_title
         abstract = row.ppd_abstract

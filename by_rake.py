@@ -6,8 +6,9 @@ import os.path as osp
 import nltk
 import pandas as pd
 from rake_nltk import Rake
+from tqdm import tqdm
 
-nltk.download("punkt")
+import utils
 
 
 def get_keyword(doc):
@@ -17,24 +18,17 @@ def get_keyword(doc):
     for score, keyword in rake.get_ranked_phrases_with_scores():
         if len(keyword.split()) <= 3:
             result.append((keyword, round(score, 5)))
-    result = list(set(result))
-    result.sort(key=lambda x: x[1], reverse=True)
-    return result
+    keyword = list(set(result))
+    keyword.sort(key=lambda x: x[1], reverse=True)
+    return keyword
 
 
 def extract(dir_path, file_name):
-    file_name = f"{file_name}_preprocessed"
-
     # Load data
-    df = pd.read_csv(osp.join(dir_path, f"{file_name}.csv"))
-
-    # Create new columns
-    text_type = {0: "ttl", 1: "abs", 2: "all"}
-    for x in text_type.values():
-        df[f"kwrd_{x}"] = None
+    df = utils.preprocess_dataframe(dir_path, file_name)
 
     # Extract keywords
-    for row in df.itertuples():
+    for row in tqdm(df.itertuples(), total=df.shape[0], desc="[RAKE]"):
         idx = row.Index
         title = row.ppd_title
         abstract = row.ppd_abstract

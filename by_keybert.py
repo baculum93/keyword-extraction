@@ -11,6 +11,8 @@ from keyphrase_vectorizers import KeyphraseCountVectorizer
 from tqdm import tqdm
 from transformers.pipelines import pipeline
 
+import utils
+
 
 def set_model_config(hf_model_name=None):
     config = {}
@@ -34,50 +36,60 @@ def set_model_config(hf_model_name=None):
 
 
 def extract_by_default(dir_path, file_name):
-    file_name = f"{file_name}_preprocessed"
+    def _get_keyword(doc):
+        keyword = config["kw_model"].extract_keywords(
+            docs=doc,
+            stop_words=config["stop_words"],
+            top_n=config["top_n"],
+            use_maxsum=config["use_maxsum"],
+            use_mmr=config["use_mmr"],
+            keyphrase_ngram_range=(ngram_n, ngram_n),
+        )
+        return keyword
+
+    logger = utils.set_logger("keybert_default")
 
     # Load data
-    df = pd.read_csv(osp.join(dir_path, f"{file_name}.csv"))
-
-    # Create new columns
-    text_type = {0: "ttl", 1: "abs", 2: "all"}
-    for x in text_type.values():
-        for y in range(3):
-            df[f"kwrd_{x}_{y+1}"] = None
+    df = utils.preprocess_dataframe_ngram(dir_path, file_name)
 
     # Set model config
     config = set_model_config()
 
     # Extract keywords
-    for row in tqdm(df.itertuples(), total=df.shape[0]):
+    for row in tqdm(df.itertuples(), total=df.shape[0], desc="[Keybert - Default]"):
         idx = row.Index
         title = row.ppd_title
         abstract = row.ppd_abstract
+        title_abstract = f"{title}. {abstract}"
 
-        docs = [title, abstract, f"{title}. {abstract}"]
-        for i, doc in enumerate(docs):
-            for n in range(1, 4):
-                try:
-                    keyword = config["kw_model"].extract_keywords(
-                        docs=doc,
-                        stop_words=config["stop_words"],
-                        top_n=config["top_n"],
-                        use_maxsum=config["use_maxsum"],
-                        use_mmr=config["use_mmr"],
-                        keyphrase_ngram_range=(1, n),
-                    )
-                    df.at[idx, f"kwrd_{text_type[i]}_{n}"] = keyword
-                except Exception as e:
-                    df.at[idx, f"kwrd_{text_type[i]}_{n}"] = []
-                    print(e)
-                    print(doc)
+        for ngram_n in range(1, 4):
+            # title
+            try:
+                df.at[idx, f"kwrd_ttl_{ngram_n}"] = _get_keyword(title)
+            except Exception as e:
+                df.at[idx, f"kwrd_ttl_{ngram_n}"] = []
+                logger.exception(f"--> {title}")
+
+            # abstract
+            try:
+                df.at[idx, f"kwrd_abs_{ngram_n}"] = _get_keyword(abstract)
+            except Exception as e:
+                df.at[idx, f"kwrd_abs_{ngram_n}"] = []
+                logger.exception(f"--> {abstract}")
+
+            # title + abstract
+            try:
+                df.at[idx, f"kwrd_all_{ngram_n}"] = _get_keyword(title_abstract)
+            except Exception as e:
+                df.at[idx, f"kwrd_all_{ngram_n}"] = []
+                logger.exception(f"--> {title_abstract}")
 
     # Config Dataframe
     config_df = pd.DataFrame(data=config, index=[0])
     config_df = config_df.T
 
     # Save dataframe
-    save_file_name = f"{file_name}_by_keybert_default_model-{config['model_name']}_maxsum-{config['use_maxsum']}_mmr-{config['use_mmr']}.xlsx"
+    save_file_name = f"{file_name}_by_keybert_default.xlsx"
     save_file_path = osp.join(dir_path, save_file_name)
     with pd.ExcelWriter(save_file_path) as writer:
         df.to_excel(writer, index=False, sheet_name="keyword")
@@ -85,49 +97,60 @@ def extract_by_default(dir_path, file_name):
 
 
 def extract_with_KeyphraseCountVectorizer(dir_path, file_name):
-    file_name = f"{file_name}_preprocessed"
+    def _get_keyword(doc):
+        keyword = config["kw_model"].extract_keywords(
+            docs=doc,
+            stop_words=config["stop_words"],
+            top_n=config["top_n"],
+            use_maxsum=config["use_maxsum"],
+            use_mmr=config["use_mmr"],
+            vectorizer=vectorizer,
+        )
+        return keyword
+
+    logger = utils.set_logger("keybert_nogram")
 
     # Load data
-    df = pd.read_csv(osp.join(dir_path, f"{file_name}.csv"))
-
-    # Create new columns
-    text_type = {0: "ttl", 1: "abs", 2: "all"}
-    for x in text_type.values():
-        df[f"kwrd_{x}"] = None
+    df = utils.preprocess_dataframe(dir_path, file_name)
 
     # Set model config
     config = set_model_config()
     vectorizer = KeyphraseCountVectorizer(pos_pattern="<N.*>{1, 3}")
 
     # Extract keywords
-    for row in tqdm(df.itertuples(), total=df.shape[0]):
+    for row in tqdm(df.itertuples(), total=df.shape[0], desc="[Keybert - No n-gram]"):
         idx = row.Index
         title = row.ppd_title
         abstract = row.ppd_abstract
+        title_abstract = f"{title}. {abstract}"
 
-        docs = [title, abstract, f"{title}. {abstract}"]
-        for i, doc in enumerate(docs):
-            try:
-                keyword = config["kw_model"].extract_keywords(
-                    docs=doc,
-                    stop_words=config["stop_words"],
-                    top_n=config["top_n"],
-                    use_maxsum=config["use_maxsum"],
-                    use_mmr=config["use_mmr"],
-                    vectorizer=vectorizer,
-                )
-                df.at[idx, f"kwrd_{text_type[i]}"] = keyword
-            except Exception as e:
-                df.at[idx, f"kwrd_{text_type[i]}"] = []
-                print(e)
-                print(doc)
+        # title
+        try:
+            df.at[idx, f"kwrd_ttl"] = _get_keyword(title)
+        except Exception as e:
+            df.at[idx, f"kwrd_ttl"] = []
+            logger.exception(f"--> {title}")
+
+        # abstract
+        try:
+            df.at[idx, f"kwrd_abs"] = _get_keyword(abstract)
+        except Exception as e:
+            df.at[idx, f"kwrd_abs"] = []
+            logger.exception(f"--> {abstract}")
+
+        # title + abstract
+        try:
+            df.at[idx, f"kwrd_all"] = _get_keyword(title_abstract)
+        except Exception as e:
+            df.at[idx, f"kwrd_all"] = []
+            logger.exception(f"--> {title_abstract}")
 
     # Config Dataframe
     config_df = pd.DataFrame(data=config, index=[0])
     config_df = config_df.T
 
     # Save dataframe
-    save_file_name = f"{file_name}_by_keybert_KeyphraseCountVectorizer_model-{config['model_name']}_maxsum-{config['use_maxsum']}_mmr-{config['use_mmr']}.xlsx"
+    save_file_name = f"{file_name}_by_keybert_KeyphraseCountVectorizer.xlsx"
     save_file_path = osp.join(dir_path, save_file_name)
     with pd.ExcelWriter(save_file_path) as writer:
         df.to_excel(writer, index=False, sheet_name="keyword")

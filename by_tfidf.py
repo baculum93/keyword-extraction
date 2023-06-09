@@ -2,12 +2,18 @@ import os.path as osp
 
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
+from tqdm import tqdm
 
-config = {}
-config["top_n"] = 10
+import utils
 
 
-def get_keyword(doc, word_list, vectorizer):
+def set_model_config():
+    config = {}
+    config["top_n"] = 10
+    return config
+
+
+def get_keyword(doc, word_list, vectorizer, config):
     tf_idf_vector = vectorizer.transform([doc])
 
     # Sort with highest score
@@ -25,31 +31,29 @@ def get_keyword(doc, word_list, vectorizer):
 
 
 def extract(dir_path, file_name):
-    file_name = f"{file_name}_preprocessed"
-
     # Load data
-    df = pd.read_csv(osp.join(dir_path, f"{file_name}.csv"))
+    df = utils.preprocess_dataframe(dir_path, file_name)
+
+    # Set model config
+    config = set_model_config()
 
     # Initialize TF-IDF vectorizer
     vectorizer = TfidfVectorizer(smooth_idf=True, use_idf=True, ngram_range=(1, 1))
     vectorizer.fit_transform(df["ppd_title"] + ". " + df["ppd_abstract"])
     word_list = vectorizer.get_feature_names_out()
 
-    # Create new columns
-    text_type = {0: "ttl", 1: "abs", 2: "all"}
-    for x in text_type.values():
-        df[f"kwrd_{x}"] = None
-
     # Extract keywords
-    for row in df.itertuples():
+    for row in tqdm(df.itertuples(), total=df.shape[0], desc="[TF-IDF]"):
         idx = row.Index
         title = row.ppd_title
-        abstr = row.ppd_abstract
-        tiabs = f"{title}. {abstr}"
+        abstract = row.ppd_abstract
+        title_abstract = f"{title}. {abstract}"
 
-        df.at[idx, "kwrd_ttl"] = get_keyword(title, word_list, vectorizer)
-        df.at[idx, "kwrd_abs"] = get_keyword(abstr, word_list, vectorizer)
-        df.at[idx, "kwrd_all"] = get_keyword(tiabs, word_list, vectorizer)
+        df.at[idx, "kwrd_ttl"] = get_keyword(title, word_list, vectorizer, config)
+        df.at[idx, "kwrd_abs"] = get_keyword(abstract, word_list, vectorizer, config)
+        df.at[idx, "kwrd_all"] = get_keyword(
+            title_abstract, word_list, vectorizer, config
+        )
 
     # Config Dataframe
     config_df = pd.DataFrame(data=config, index=[0])
