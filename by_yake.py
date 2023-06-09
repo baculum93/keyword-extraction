@@ -1,30 +1,32 @@
 import os.path as osp
 
 import pandas as pd
-import yake
 import tqdm
+import yake
+
 import utils
+
 
 def set_model_config():
     config = {}
-    config["lan"] = "en" # text language
-    config["dedupLim"] = 0.8 # deduplication threshold
-    config["windowsSize"] = 4 # number of keywords
+    config["lan"] = "en"  # text language
+    config["dedupLim"] = 0.8  # deduplication threshold
+    config["windowsSize"] = 4  # number of keywords
     config["top"] = 10
     return config
-    
+
 
 def get_keywords(doc, ngram):
     # Set model config
     config = set_model_config()
     kw_extractor = yake.KeywordExtractor(
-        lan = config["lan"], 
-        n = ngram,
-        dedupLim = config["dedupLim"], 
-        windowsSize = config["windowsSize"],
-        top = config["top"] 
-        )
-    
+        lan=config["lan"],
+        n=ngram,
+        dedupLim=config["dedupLim"],
+        windowsSize=config["windowsSize"],
+        top=config["top"],
+    )
+
     keywords = kw_extractor.extract_keywords(doc)
     return keywords
 
@@ -39,7 +41,7 @@ def extract(dir_path, file_name):
         abstract = row.ppd_abstract
         title_abstract = f"{title}. {abstract}"
         # Extract keyword
-        for ngram in range(1,4):
+        for ngram in range(1, 4):
             df.at[idx, "kwrd_ttl"] = get_keywords(title, ngram)
             df.at[idx, "kwrd_abs"] = get_keywords(abstract, ngram)
             df.at[idx, "kwrd_all"] = get_keywords(title_abstract, ngram)
